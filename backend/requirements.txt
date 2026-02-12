@@ -7,18 +7,26 @@ python-multipart==0.0.9
 pydantic==2.6.1
 pydantic-settings==2.1.0
 
-# Computer Vision
-google-cloud-vision==3.7.0
-opencv-python==4.9.0.80
+# Computer Vision - Local GPU
+torch==2.2.0
+torchvision==0.17.0
+ultralytics==8.1.0  # YOLOv8
+transformers==4.37.2  # CLIP
+easyocr==1.7.1
 pillow==10.2.0
+opencv-python==4.9.0.80
 
-# LLM
-openai==1.12.0
-google-generativeai==0.3.2
+# LLM - Local GPU
+ollama==0.1.6  # For LLaVA
+# Alternative: vllm==0.3.0
+
+# CUDA utilities
+nvidia-ml-py3==7.352.0
 
 # Utilities
 python-dotenv==1.0.1
 aiofiles==23.2.1
+numpy==1.26.4
 
 # Development
 black==24.2.0
@@ -27,3 +35,4 @@ mypy==1.8.0
 pytest==8.0.0
 pytest-asyncio==0.23.5
 httpx==0.26.0
+hypothesis==6.98.0

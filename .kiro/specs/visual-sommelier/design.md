@@ -8,7 +8,22 @@
 
 ## Архитектура
 
-Система построена на трехуровневой архитектуре:
+Система построена на трехуровневой архитектуре с локальным GPU-ускорением:
+
+### Системные требования
+
+**GPU:**
+- NVIDIA Quadro P1000 (4GB VRAM) с CUDA 11.8+
+- Compute Capability 6.1+
+- CUDA Toolkit и cuDNN установлены
+
+**CPU/RAM:**
+- Минимум 8GB RAM (16GB рекомендуется)
+- 4+ ядра CPU для preprocessing
+
+**Хранилище:**
+- 20GB для моделей (YOLOv8, CLIP, LLaVA-7B quantized)
+- SSD рекомендуется для быстрой загрузки моделей
 
 ### Уровень представления (Frontend)
 - **Технология**: React с TypeScript
@@ -23,10 +38,16 @@
 - **API**: RESTful API для синхронных операций
 - **Валидация**: Pydantic для валидации данных
 
-### Уровень интеграции (External Services)
-- **CV Provider**: Google Cloud Vision API (основной), с возможностью переключения на OpenCV
-- **LLM Provider**: OpenAI GPT-4 Vision API (основной), с возможностью переключения на Google Gemini Pro Vision
-- **Хранилище изображений**: Локальное хранилище с опциональной интеграцией облачного хранилища
+### Уровень интеграции (Local GPU Inference)
+- **CV Provider**: Локальные модели на NVIDIA Quadro P1000 с CUDA
+  - YOLOv8 для детекции объектов
+  - CLIP для классификации устройств
+  - EasyOCR для распознавания текста
+- **LLM Provider**: Локальные vision-language модели
+  - LLaVA (7B/13B) через Ollama
+  - Qwen-VL как альтернатива
+  - Поддержка квантизации (4-bit) для оптимизации памяти
+- **Хранилище изображений**: Локальное хранилище
 
 ### Диаграмма архитектуры
 
@@ -45,13 +66,14 @@ graph TB
         TextGen[Text Generator]
     end
     
-    subgraph "Integration Layer"
+    subgraph "Local GPU Inference Layer - NVIDIA Quadro P1000"
         CVAdapter[CV Adapter Interface]
         LLMAdapter[LLM Adapter Interface]
-        GoogleVision[Google Vision API]
-        OpenCV[OpenCV]
-        GPT4[GPT-4 Vision]
-        Gemini[Gemini Pro Vision]
+        YOLO[YOLOv8 Object Detection]
+        CLIP[CLIP Classification]
+        OCR[EasyOCR Text Recognition]
+        LLaVA[LLaVA Vision-Language Model]
+        Qwen[Qwen-VL Alternative]
     end
     
     UI --> API
@@ -65,10 +87,11 @@ graph TB
     ImageProc --> CVAdapter
     TextGen --> LLMAdapter
     
-    CVAdapter --> GoogleVision
-    CVAdapter --> OpenCV
-    LLMAdapter --> GPT4
-    LLMAdapter --> Gemini
+    CVAdapter --> YOLO
+    CVAdapter --> CLIP
+    CVAdapter --> OCR
+    LLMAdapter --> LLaVA
+    LLMAdapter --> Qwen
 ```
 
 ## Компоненты и интерфейсы
@@ -260,8 +283,9 @@ class CVProviderAdapter(ABC):
 ```
 
 **Реализации**:
-- `GoogleVisionAdapter`: Использует Google Cloud Vision API
-- `OpenCVAdapter`: Использует локальный OpenCV (для офлайн-режима)
+- `YOLOAdapter`: Использует YOLOv8 для детекции объектов и элементов управления
+- `CLIPAdapter`: Использует CLIP для классификации типов устройств
+- `EasyOCRAdapter`: Использует EasyOCR для распознавания текста на устройствах
 
 #### 2. LLMProviderAdapter (Абстрактный интерфейс)
 **Назначение**: Единый интерфейс для провайдеров LLM
@@ -294,8 +318,9 @@ class LLMProviderAdapter(ABC):
 ```
 
 **Реализации**:
-- `OpenAIAdapter`: Использует GPT-4 Vision API
-- `GeminiAdapter`: Использует Google Gemini Pro Vision API
+- `LLaVAAdapter`: Использует LLaVA (Large Language and Vision Assistant) через Ollama
+- `QwenVLAdapter`: Использует Qwen-VL как альтернативную модель
+- Поддержка квантизации 4-bit для работы на GPU с ограниченной памятью (4GB VRAM)
 
 ## Модели данных
 
@@ -391,4 +416,49 @@ class Explanation(BaseModel):
 ## Свойства корректности
 
 *Свойство — это характеристика или поведение, которое должно выполняться во всех допустимых выполнениях системы — по сути, формальное утверждение о том, что должна делать система. Свойства служат мостом между спецификациями, понятными человеку, и гарантиями корректности, проверяемыми машиной.*
+
+## Локальные модели и оптимизация
+
+### Computer Vision модели
+
+**YOLOv8n (Nano):**
+- Размер: ~6MB
+- Назначение: Детекция объектов и элементов управления
+- Inference time: ~20-30ms на Quadro P1000
+- VRAM: ~500MB
+
+**CLIP ViT-B/32:**
+- Размер: ~350MB
+- Назначение: Классификация типов устройств (zero-shot)
+- Inference time: ~50-100ms
+- VRAM: ~1GB
+
+**EasyOCR:**
+- Размер: ~100MB (English + Russian + Chinese)
+- Назначение: Распознавание текста на кнопках и панелях
+- Inference time: ~200-500ms
+- VRAM: ~500MB
+
+### Vision-Language модели
+
+**LLaVA-7B (4-bit quantized):**
+- Размер: ~4GB
+- Назначение: Генерация объяснений и инструкций
+- Inference time: ~2-5 секунд для ответа
+- VRAM: ~2.5GB
+- Через Ollama для упрощенного управления
+
+**Qwen-VL-Chat (4-bit quantized):**
+- Размер: ~4GB
+- Назначение: Альтернативная модель для мультиязычности
+- Inference time: ~2-5 секунд
+- VRAM: ~2.5GB
+
+### Стратегия управления памятью
+
+1. **Lazy Loading**: Модели загружаются по требованию
+2. **Model Unloading**: Неиспользуемые модели выгружаются через 5 минут простоя
+3. **Batch Processing**: Группировка запросов для эффективности
+4. **Quantization**: 4-bit квантизация для LLM моделей
+5. **Mixed Precision**: FP16 для CV моделей
 
