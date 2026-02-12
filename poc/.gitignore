@@ -1,0 +1,15 @@
+# Test images (user should add their own)
+test_images/*.jpg
+test_images/*.png
+!test_images/.gitkeep
+
+# Results
+results/
+
+# Models cache
+*.pt
+models/
+
+# Python
+__pycache__/
+*.pyc
