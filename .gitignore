@@ -67,3 +67,8 @@ pip-delete-this-directory.txt
 # Logs
 *.log
 logs/
+
+# Google Cloud credentials
+*.json
+!package.json
+!tsconfig*.json
