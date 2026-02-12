@@ -22,7 +22,7 @@
 - 4+ ядра CPU для preprocessing
 
 **Хранилище:**
-- 20GB для моделей (YOLOv8, CLIP, LLaVA-7B quantized)
+- 10GB для моделей (YOLOv8n, EasyOCR, LLaVA-7B-q4)
 - SSD рекомендуется для быстрой загрузки моделей
 
 ### Уровень представления (Frontend)
@@ -40,13 +40,11 @@
 
 ### Уровень интеграции (Local GPU Inference)
 - **CV Provider**: Локальные модели на NVIDIA Quadro P1000 с CUDA
-  - YOLOv8 для детекции объектов
-  - CLIP для классификации устройств
-  - EasyOCR для распознавания текста
-- **LLM Provider**: Локальные vision-language модели
-  - LLaVA (7B/13B) через Ollama
-  - Qwen-VL как альтернатива
-  - Поддержка квантизации (4-bit) для оптимизации памяти
+  - YOLOv8n для детекции объектов и элементов управления
+  - EasyOCR для распознавания текста на устройствах
+- **LLM Provider**: LLaVA-7B (4-bit quantized) через Ollama
+  - Vision-language модель для генерации объяснений
+  - Квантизация 4-bit для работы на 4GB VRAM
 - **Хранилище изображений**: Локальное хранилище
 
 ### Диаграмма архитектуры
@@ -69,11 +67,9 @@ graph TB
     subgraph "Local GPU Inference Layer - NVIDIA Quadro P1000"
         CVAdapter[CV Adapter Interface]
         LLMAdapter[LLM Adapter Interface]
-        YOLO[YOLOv8 Object Detection]
-        CLIP[CLIP Classification]
+        YOLO[YOLOv8n Object Detection]
         OCR[EasyOCR Text Recognition]
-        LLaVA[LLaVA Vision-Language Model]
-        Qwen[Qwen-VL Alternative]
+        LLaVA[LLaVA-7B-q4 Vision-Language Model]
     end
     
     UI --> API
@@ -88,10 +84,8 @@ graph TB
     TextGen --> LLMAdapter
     
     CVAdapter --> YOLO
-    CVAdapter --> CLIP
     CVAdapter --> OCR
     LLMAdapter --> LLaVA
-    LLMAdapter --> Qwen
 ```
 
 ## Компоненты и интерфейсы
@@ -283,8 +277,7 @@ class CVProviderAdapter(ABC):
 ```
 
 **Реализации**:
-- `YOLOAdapter`: Использует YOLOv8 для детекции объектов и элементов управления
-- `CLIPAdapter`: Использует CLIP для классификации типов устройств
+- `YOLOAdapter`: Использует YOLOv8n для детекции объектов и элементов управления
 - `EasyOCRAdapter`: Использует EasyOCR для распознавания текста на устройствах
 
 #### 2. LLMProviderAdapter (Абстрактный интерфейс)
@@ -318,9 +311,7 @@ class LLMProviderAdapter(ABC):
 ```
 
 **Реализации**:
-- `LLaVAAdapter`: Использует LLaVA (Large Language and Vision Assistant) через Ollama
-- `QwenVLAdapter`: Использует Qwen-VL как альтернативную модель
-- Поддержка квантизации 4-bit для работы на GPU с ограниченной памятью (4GB VRAM)
+- `LLaVAAdapter`: Использует LLaVA-7B (4-bit quantized) через Ollama для генерации объяснений и инструкций
 
 ## Модели данных
 
@@ -423,42 +414,43 @@ class Explanation(BaseModel):
 
 **YOLOv8n (Nano):**
 - Размер: ~6MB
-- Назначение: Детекция объектов и элементов управления
+- Назначение: Детекция объектов и элементов управления на устройствах
 - Inference time: ~20-30ms на Quadro P1000
 - VRAM: ~500MB
-
-**CLIP ViT-B/32:**
-- Размер: ~350MB
-- Назначение: Классификация типов устройств (zero-shot)
-- Inference time: ~50-100ms
-- VRAM: ~1GB
+- Точность: mAP 37.3% на COCO (достаточно для бытовых устройств)
 
 **EasyOCR:**
 - Размер: ~100MB (English + Russian + Chinese)
-- Назначение: Распознавание текста на кнопках и панелях
-- Inference time: ~200-500ms
+- Назначение: Распознавание текста на кнопках, панелях, этикетках
+- Inference time: ~200-500ms в зависимости от количества текста
 - VRAM: ~500MB
+- Поддержка кириллицы и иероглифов
 
-### Vision-Language модели
+### Vision-Language модель
 
 **LLaVA-7B (4-bit quantized):**
 - Размер: ~4GB
-- Назначение: Генерация объяснений и инструкций
-- Inference time: ~2-5 секунд для ответа
+- Назначение: Генерация объяснений, инструкций, ответов на вопросы о устройствах
+- Inference time: ~2-5 секунд для ответа (зависит от длины)
 - VRAM: ~2.5GB
-- Через Ollama для упрощенного управления
-
-**Qwen-VL-Chat (4-bit quantized):**
-- Размер: ~4GB
-- Назначение: Альтернативная модель для мультиязычности
-- Inference time: ~2-5 секунд
-- VRAM: ~2.5GB
+- Через Ollama для упрощенного управления и автоматической оптимизации
+- Мультиязычность: русский, английский, китайский
 
 ### Стратегия управления памятью
 
-1. **Lazy Loading**: Модели загружаются по требованию
-2. **Model Unloading**: Неиспользуемые модели выгружаются через 5 минут простоя
-3. **Batch Processing**: Группировка запросов для эффективности
-4. **Quantization**: 4-bit квантизация для LLM моделей
-5. **Mixed Precision**: FP16 для CV моделей
+1. **Sequential Loading**: Модели загружаются последовательно по требованию
+   - Сначала YOLOv8n для детекции
+   - Затем EasyOCR если нужно распознать текст
+   - Наконец LLaVA для генерации объяснения
+2. **Model Unloading**: YOLOv8n и EasyOCR выгружаются после использования, LLaVA остается в памяти
+3. **Batch Processing**: Группировка запросов для CV моделей
+4. **Mixed Precision**: FP16 для YOLOv8n, 4-bit quantization для LLaVA
+
+### Общее использование VRAM
+
+- **Idle**: ~0MB (все модели выгружены)
+- **CV операции**: ~1GB (YOLO + OCR)
+- **LLM операции**: ~2.5GB (только LLaVA)
+- **Peak**: ~3.5GB (все модели загружены одновременно)
+- **Запас**: ~500MB для системы и других процессов
 

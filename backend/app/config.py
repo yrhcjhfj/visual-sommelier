@@ -24,9 +24,6 @@ class Settings(BaseSettings):
     yolo_model: str = "yolov8n.pt"
     yolo_confidence: float = 0.5
 
-    # CLIP
-    clip_model: str = "ViT-B/32"
-
     # EasyOCR
     easyocr_languages: str = "en,ru,zh"
 
@@ -35,10 +32,6 @@ class Settings(BaseSettings):
     llava_model: str = "llava:7b-v1.6-mistral-q4_0"
     llava_max_tokens: int = 512
     llava_temperature: float = 0.7
-
-    # Qwen-VL
-    qwen_model: str = "Qwen-VL-Chat-Int4"
-    qwen_max_tokens: int = 512
 
     # Model Management
     model_unload_timeout: int = 300

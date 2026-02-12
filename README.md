@@ -28,7 +28,6 @@ visual-sommelier/
 - FastAPI
 - PyTorch + CUDA
 - YOLOv8 (детекция объектов)
-- CLIP (классификация устройств)
 - EasyOCR (распознавание текста)
 - LLaVA через Ollama (vision-language модель)
 
@@ -44,7 +43,7 @@ visual-sommelier/
 - 4+ ядра CPU
 
 **Хранилище:**
-- 20GB для моделей
+- 10GB для моделей
 - SSD рекомендуется
 
 ## Установка
@@ -108,7 +107,6 @@ npm run dev
 Модели загружаются автоматически при первом запуске:
 
 - **YOLOv8n**: ~6MB (детекция объектов)
-- **CLIP ViT-B/32**: ~350MB (классификация)
 - **EasyOCR**: ~100MB (OCR для EN/RU/ZH)
 - **LLaVA-7B-q4**: ~4GB (через Ollama)
 

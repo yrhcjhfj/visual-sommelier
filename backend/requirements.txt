@@ -11,14 +11,12 @@ pydantic-settings==2.1.0
 torch==2.2.0
 torchvision==0.17.0
 ultralytics==8.1.0  # YOLOv8
-transformers==4.37.2  # CLIP
 easyocr==1.7.1
 pillow==10.2.0
 opencv-python==4.9.0.80
 
-# LLM - Local GPU
-ollama==0.1.6  # For LLaVA
-# Alternative: vllm==0.3.0
+# LLM - Local GPU via Ollama
+ollama==0.1.6
 
 # CUDA utilities
 nvidia-ml-py3==7.352.0
