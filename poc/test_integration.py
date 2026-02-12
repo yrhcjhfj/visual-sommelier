@@ -104,13 +104,16 @@ def test_integration():
     try:
         print("📦 Инициализация EasyOCR...")
         reader = easyocr.Reader(
-            ['en', 'ru', 'zh_sim'],
+            ['en'],
             gpu=torch.cuda.is_available(),
             verbose=False
         )
         
         print("🔍 Распознавание текста...")
-        ocr_results = reader.readtext(str(test_image_path))
+        # Load image and convert to RGB (EasyOCR expects RGB)
+        img = cv2.imread(str(test_image_path))
+        img_rgb = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+        ocr_results = reader.readtext(img_rgb)
         
         step_time = time.time() - step_start
         print(f"⏱ Время: {step_time:.2f} сек")
@@ -118,7 +121,10 @@ def test_integration():
         
         if len(ocr_results) > 0:
             print("\n📝 Распознанный текст:")
-            for i, (_, text, conf) in enumerate(ocr_results[:5], 1):  # Первые 5
+            for i, result in enumerate(ocr_results[:5], 1):  # Первые 5
+                # result is a tuple: (bbox, text, confidence)
+                text = result[1] if len(result) > 1 else str(result)
+                conf = result[2] if len(result) > 2 else 0.0
                 print(f"  {i}. '{text}' ({conf:.2f})")
             if len(ocr_results) > 5:
                 print(f"  ... и еще {len(ocr_results) - 5}")
@@ -126,7 +132,9 @@ def test_integration():
         check_gpu_memory()
         
     except Exception as e:
+        import traceback
         print(f"✗ Ошибка OCR: {e}")
+        print(f"Traceback: {traceback.format_exc()}")
         return False
     
     # Шаг 3: Генерация объяснения LLaVA
@@ -146,7 +154,7 @@ def test_integration():
             context_parts.append(f"Обнаружены объекты: {', '.join(detected_objects)}")
         
         if len(ocr_results) > 0:
-            texts = [text for _, text, _ in ocr_results]
+            texts = [result[1] for result in ocr_results]
             context_parts.append(f"Распознанный текст: {', '.join(texts[:5])}")
         
         context = ". ".join(context_parts) if context_parts else ""

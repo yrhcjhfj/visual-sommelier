@@ -25,10 +25,10 @@ def test_llava_basic():
     # Проверка доступности Ollama
     try:
         models = ollama.list()
-        print(f"✓ Ollama доступен. Установлено моделей: {len(models.get('models', []))}")
+        print(f"✓ Ollama доступен. Установлено моделей: {len(models.models)}")
         
         # Проверка наличия LLaVA
-        llava_found = any('llava' in m.get('name', '').lower() for m in models.get('models', []))
+        llava_found = any('llava' in m.model.lower() for m in models.models)
         if llava_found:
             print("✓ LLaVA модель найдена")
         else:

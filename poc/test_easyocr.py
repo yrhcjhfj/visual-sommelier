@@ -29,23 +29,6 @@ def test_easyocr():
     
     cuda_available = check_cuda()
     
-    # Инициализация EasyOCR
-    print(f"\n📦 Инициализация EasyOCR (en, ru, zh)...")
-    print("  ⚠ Первый запуск загрузит модели (~100MB)")
-    
-    start_time = time.time()
-    try:
-        reader = easyocr.Reader(
-            ['en', 'ru', 'zh_sim'],
-            gpu=cuda_available,
-            verbose=False
-        )
-        load_time = time.time() - start_time
-        print(f"✓ EasyOCR инициализирован за {load_time:.2f} секунд")
-    except Exception as e:
-        print(f"✗ Ошибка инициализации: {e}")
-        return False
-    
     # Проверка тестового изображения
     test_image_path = Path("test_images/test_device.jpg")
     if not test_image_path.exists():
@@ -64,83 +47,114 @@ def test_easyocr():
     
     print(f"  Размер: {image.shape[1]}x{image.shape[0]}")
     
-    # Распознавание текста
-    print("\n🔍 Распознавание текста...")
-    start_time = time.time()
-    try:
-        results = reader.readtext(str(test_image_path))
-        elapsed = time.time() - start_time
-        print(f"⏱ Время распознавания: {elapsed:.2f} секунд")
-    except Exception as e:
-        print(f"✗ Ошибка распознавания: {e}")
-        return False
+    # Тестируем разные языковые комбинации
+    language_configs = [
+        (['en', 'ru'], 'English + Russian'),
+        (['ch_sim', 'en'], 'Chinese + English'),
+    ]
     
-    # Анализ результатов
-    if len(results) == 0:
-        print("\n⚠ Текст не обнаружен")
-        print("  Возможные причины:")
-        print("  - На изображении нет текста")
-        print("  - Текст слишком мелкий или размытый")
-        print("  - Плохое освещение")
-    else:
-        print(f"\n✓ Обнаружено текстовых блоков: {len(results)}")
-        print("\n📝 Распознанный текст:")
-        print("-" * 60)
+    all_results = []
+    
+    for lang_list, lang_name in language_configs:
+        print(f"\n{'=' * 60}")
+        print(f"📦 Тестирование: {lang_name}")
+        print(f"{'=' * 60}")
+        print(f"  Инициализация EasyOCR ({', '.join(lang_list)})...")
+        print("  ⚠ Первый запуск загрузит модели (~100MB)")
         
-        for i, (bbox, text, confidence) in enumerate(results, 1):
-            print(f"{i}. '{text}' (уверенность: {confidence:.2f})")
+        start_time = time.time()
+        try:
+            reader = easyocr.Reader(
+                lang_list,
+                gpu=cuda_available,
+                verbose=False
+            )
+            load_time = time.time() - start_time
+            print(f"✓ EasyOCR инициализирован за {load_time:.2f} секунд")
+        except Exception as e:
+            print(f"✗ Ошибка инициализации: {e}")
+            continue
         
-        print("-" * 60)
+        # Распознавание текста
+        print("\n🔍 Распознавание текста...")
+        start_time = time.time()
+        try:
+            results = reader.readtext(str(test_image_path))
+            elapsed = time.time() - start_time
+            print(f"⏱ Время распознавания: {elapsed:.2f} секунд")
+        except Exception as e:
+            print(f"✗ Ошибка распознавания: {e}")
+            continue
         
-        # Статистика по уверенности
-        confidences = [conf for _, _, conf in results]
-        avg_confidence = np.mean(confidences)
-        min_confidence = np.min(confidences)
-        
-        print(f"\n📊 Статистика:")
-        print(f"  Средняя уверенность: {avg_confidence:.2f}")
-        print(f"  Минимальная уверенность: {min_confidence:.2f}")
-        
-        if avg_confidence < 0.5:
-            print(f"  ⚠ Низкая уверенность распознавания")
+        # Анализ результатов
+        if len(results) == 0:
+            print("\n⚠ Текст не обнаружен")
+            print("  Возможные причины:")
+            print("  - На изображении нет текста на этих языках")
+            print("  - Текст слишком мелкий или размытый")
+            print("  - Плохое освещение")
         else:
-            print(f"  ✓ Хорошая уверенность распознавания")
-    
-    # Визуализация результатов
-    output_path = Path("results/ocr_result.jpg")
-    output_path.parent.mkdir(exist_ok=True)
-    
-    # Рисуем bounding boxes и текст
-    image_annotated = image.copy()
-    for bbox, text, confidence in results:
-        # Преобразуем bbox в целые числа
-        pts = np.array(bbox, dtype=np.int32)
+            print(f"\n✓ Обнаружено текстовых блоков: {len(results)}")
+            print("\n📝 Распознанный текст:")
+            print("-" * 60)
+            
+            for i, (bbox, text, confidence) in enumerate(results, 1):
+                print(f"{i}. '{text}' (уверенность: {confidence:.2f})")
+            
+            print("-" * 60)
+            
+            # Статистика по уверенности
+            confidences = [conf for _, _, conf in results]
+            avg_confidence = np.mean(confidences)
+            min_confidence = np.min(confidences)
+            
+            print(f"\n📊 Статистика:")
+            print(f"  Средняя уверенность: {avg_confidence:.2f}")
+            print(f"  Минимальная уверенность: {min_confidence:.2f}")
+            
+            if avg_confidence < 0.5:
+                print(f"  ⚠ Низкая уверенность распознавания")
+            else:
+                print(f"  ✓ Хорошая уверенность распознавания")
+            
+            all_results.extend(results)
         
-        # Рисуем прямоугольник
-        cv2.polylines(image_annotated, [pts], True, (0, 255, 0), 2)
+        # Проверка использования GPU памяти
+        if cuda_available:
+            memory_allocated = torch.cuda.memory_allocated(0) / 1024**2
+            memory_reserved = torch.cuda.memory_reserved(0) / 1024**2
+            print(f"\n🎮 Использование GPU памяти:")
+            print(f"  Выделено: {memory_allocated:.1f} MB")
+            print(f"  Зарезервировано: {memory_reserved:.1f} MB")
+    
+    # Визуализация всех результатов
+    if all_results:
+        output_path = Path("results/ocr_result.jpg")
+        output_path.parent.mkdir(exist_ok=True)
         
-        # Добавляем текст
-        x, y = pts[0]
-        cv2.putText(
-            image_annotated,
-            f"{text} ({confidence:.2f})",
-            (x, y - 10),
-            cv2.FONT_HERSHEY_SIMPLEX,
-            0.5,
-            (0, 255, 0),
-            2
-        )
-    
-    cv2.imwrite(str(output_path), image_annotated)
-    print(f"\n💾 Результат сохранен: {output_path}")
-    
-    # Проверка использования GPU памяти
-    if cuda_available:
-        memory_allocated = torch.cuda.memory_allocated(0) / 1024**2
-        memory_reserved = torch.cuda.memory_reserved(0) / 1024**2
-        print(f"\n🎮 Использование GPU памяти:")
-        print(f"  Выделено: {memory_allocated:.1f} MB")
-        print(f"  Зарезервировано: {memory_reserved:.1f} MB")
+        # Рисуем bounding boxes и текст
+        image_annotated = image.copy()
+        for bbox, text, confidence in all_results:
+            # Преобразуем bbox в целые числа
+            pts = np.array(bbox, dtype=np.int32)
+            
+            # Рисуем прямоугольник
+            cv2.polylines(image_annotated, [pts], True, (0, 255, 0), 2)
+            
+            # Добавляем текст
+            x, y = pts[0]
+            cv2.putText(
+                image_annotated,
+                f"{text} ({confidence:.2f})",
+                (x, y - 10),
+                cv2.FONT_HERSHEY_SIMPLEX,
+                0.5,
+                (0, 255, 0),
+                2
+            )
+        
+        cv2.imwrite(str(output_path), image_annotated)
+        print(f"\n💾 Результат сохранен: {output_path}")
     
     print("\n" + "=" * 60)
     print("✓ Тест 0.3 завершен успешно")
