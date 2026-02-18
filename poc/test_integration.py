@@ -170,9 +170,9 @@ def test_integration():
 
 Будь конкретным и полезным."""
         
-        print("💬 Отправка запроса в LLaVA...")
+        print("💬 Отправка запроса в moondream...")
         response = ollama.chat(
-            model='llava:7b-v1.6-mistral-q4_0',
+            model='moondream',
             messages=[{
                 'role': 'user',
                 'content': prompt,
