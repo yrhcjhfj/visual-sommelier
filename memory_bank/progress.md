@@ -24,7 +24,7 @@
 
 ## Контроль изменений
 
-- last_checked_commit: 18873cf
+- last_checked_commit: 1de3c58
 
 ## Changelog
 
