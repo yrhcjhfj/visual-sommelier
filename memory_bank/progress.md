@@ -7,6 +7,8 @@
 - POC тестирование (тесты для всех компонентов)
 - Frontend базовая структура (React + TypeScript + Vite)
 - Документация README.md
+- SessionService (управление сессиями и историей диалога)
+- Property-тесты для контекста сессии (9 тестов, все проходят)
 
 ## В работе
 
@@ -30,3 +32,6 @@
 - Инициализация Memory Bank
 - Создание AGENTS.md из актуального шаблона
 - Создание всех файлов memory_bank с таблицей Project Deliverables
+- Реализация SessionService (backend/app/services/session_service.py)
+- Property-тесты для контекста сессии (backend/tests/test_session_context_properties.py)
+- Обновление tasks.md (задачи 6 и 6.1 отмечены как выполненные)
