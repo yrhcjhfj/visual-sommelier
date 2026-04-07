@@ -128,3 +128,18 @@ nvidia-smi
 ## Переменные окружения
 
 Скопируйте `.env.example` в `.env` и настройте под свою систему.
+
+## API
+
+Backend теперь предоставляет базовый интеграционный API для frontend и ручной проверки:
+
+- `POST /api/analyze` - принимает изображение устройства как multipart-файл и возвращает результат анализа
+- `POST /api/explain` - принимает вопрос, `device_context` и optional `image_base64`, возвращает объяснение
+- `POST /api/instructions` - принимает задачу, `device_context` и optional `image_base64`, возвращает список шагов
+- `POST /api/clarify` - принимает шаг, вопрос, `device_context` и optional `image_base64`, возвращает уточнение по шагу
+
+Ограничения API:
+
+- upload в `/api/analyze` принимает только `image/*`
+- размер изображения ограничен `max_image_size_mb` из backend-конфига
+- `image_base64` в JSON-эндпоинтах валидируется и при некорректном значении возвращает `400`

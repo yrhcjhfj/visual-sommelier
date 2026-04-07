@@ -5,6 +5,7 @@
 ### Backend (Python + FastAPI)
 - **Структура**: app/ с разделением на adapters/, api/, models/, services/, utils/
 - **API**: RESTful endpoints через FastAPI routers
+- **Маршруты**: `POST /api/analyze`, `POST /api/explain`, `POST /api/instructions`, `POST /api/clarify`
 - **Модели**: PyTorch модели для CV и LLM
 - **Конфигурация**: pyproject.toml + requirements.txt
 
@@ -23,6 +24,7 @@
 
 - **Адаптеры**: Модульная система адаптеров для работы с разными моделями
 - **Сервисы**: Бизнес-логика вынесена в services/
+- **API orchestration**: HTTP-слой валидирует входные данные, ограничения размера изображения и делегирует работу сервисам
 - **Store**: Централизованное управление состоянием через Zustand
 
 ## Связи подсистем
