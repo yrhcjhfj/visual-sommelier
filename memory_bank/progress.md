@@ -10,6 +10,7 @@
 - SessionService (управление сессиями и историей диалога)
 - Property-тесты для контекста сессии (9 тестов, все проходят)
 - Базовый FastAPI API-слой для анализа, объяснений, инструкций и уточнения шагов
+- Zustand store для Frontend (appStore.ts) с персистентностью в localStorage
 
 ## В работе
 
@@ -29,6 +30,12 @@
 - last_checked_commit: 0d426d3
 
 ## Changelog
+
+### 2026-04-16
+- Добавлен Zustand store (src/store/appStore.ts) для управления состоянием
+- Рефакторинг App.tsx для использования store
+- Добавлена панель истории сессий в UI
+- Персистентность данных в localStorage
 
 ### 2026-04-07
 - Добавлен API-слой FastAPI с маршрутами `/api/analyze`, `/api/explain`, `/api/instructions`, `/api/clarify`
