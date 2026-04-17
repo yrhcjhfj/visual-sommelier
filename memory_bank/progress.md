@@ -11,18 +11,17 @@
 - Property-тесты для контекста сессии (9 тестов, все проходят)
 - Базовый FastAPI API-слой для анализа, объяснений, инструкций и уточнения шагов
 - Zustand store для Frontend (appStore.ts) с персистентностью в localStorage
+- **Frontend UI полностью интегрирован с Backend API через Vite proxy**
+- **Vite proxy: /api → http://localhost:8000**
 
 ## В работе
 
 - LLM интеграция (LLaVA через Ollama)
-- Frontend UI компоненты
-- Интеграция Frontend с Backend
 
 ## Known Issues
 
 - Требуется проверка работы CUDA на текущей конфигурации
 - Автоматическая выгрузка моделей не протестирована
-- Frontend еще не подключен к новым backend API-маршрутам
 - API-тесты не запущены в рабочем окружении из-за отсутствующего пакета `fastapi` в текущем Python
 
 ## Контроль изменений
@@ -30,6 +29,13 @@
 - last_checked_commit: 0d426d3
 
 ## Changelog
+
+### 2026-04-17
+- **Интеграция Frontend и Backend завершена**
+- App.tsx полностью использует API клиент и Zustand store
+- Vite proxy настроен для /api → http://localhost:8000
+- UI с загрузкой изображения, анализом, объяснениями и инструкциями
+- Biome linting прошёл без ошибок
 
 ### 2026-04-16
 - Добавлен Zustand store (src/store/appStore.ts) для управления состоянием

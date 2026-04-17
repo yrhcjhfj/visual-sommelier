@@ -19,8 +19,8 @@
 | VS-02 | CV Pipeline (YOLOv8 детекция объектов) | completed | 15 |
 | VS-03 | OCR модуль (EasyOCR для EN/RU/ZH) | completed | 10 |
 | VS-04 | LLM интеграция (LLaVA через Ollama) | in_progress | 15 |
-| VS-05 | Frontend UI (React + Tailwind + Zustand) | in_progress | 20 |
-| VS-06 | Интеграция всех компонентов | in_progress | 10 |
+| VS-05 | Frontend UI (React + Tailwind + Zustand) | completed | 20 |
+| VS-06 | Интеграция всех компонентов | completed | 10 |
 | VS-07 | POC тестирование и валидация | completed | 5 |
 | VS-08 | Документация и README | completed | 10 |
 
